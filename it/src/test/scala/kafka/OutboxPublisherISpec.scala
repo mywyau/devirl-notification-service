@@ -30,8 +30,8 @@ class OutboxPublisherISpec(global: GlobalRead) extends IOSuite {
     for {
       transactor <- global.getOrFailR[TransactorResource]()
       _ <- Resource.eval(
-        resetOutboxTable.update.run.transact(transactor.xa).void *>
-          createOutboxTable.update.run.transact(transactor.xa).void
+        createOutboxTable.update.run.transact(transactor.xa).void *>
+          resetOutboxTable.update.run.transact(transactor.xa).void
       )
       producer <- global.getOrFailR[KafkaProducerResource]()
       outboxRepo = new OutboxRepositoryImpl[IO](transactor.xa)

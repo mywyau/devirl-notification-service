@@ -48,7 +48,7 @@ object Main extends IOApp {
         kafkaProducers <- KafkaModule.make[IO](config)
         httpClient <- HttpClientModule.make[IO]
         httpApp <- HttpModule.make(config, transactor, kafkaProducers)
-        _ <- OutboxModule.make[IO](transactor, kafkaProducers.registrationEventProducer)
+        // _ <- OutboxModule.make[IO](transactor, kafkaProducers.registrationEventProducer)
         host <- Resource.eval(IO.fromOption(Host.fromString(config.serverConfig.host))(new RuntimeException("Invalid host in configuration")))
         port <- Resource.eval(IO.fromOption(Port.fromInt(config.serverConfig.port))(new RuntimeException("Invalid port in configuration")))
         server <- EmberServerBuilder

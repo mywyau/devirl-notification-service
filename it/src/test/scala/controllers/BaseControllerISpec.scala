@@ -1,8 +1,6 @@
 package controllers
 
 import cats.effect.*
-import controllers.BaseController
-import controllers.ControllerISpecBase
 import doobie.util.transactor.Transactor
 import models.responses.GetResponse
 import org.http4s.*

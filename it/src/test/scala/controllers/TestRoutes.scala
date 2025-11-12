@@ -1,4 +1,4 @@
-package controllers.test_routes
+package test_routes
 
 import cats.data.Validated
 import cats.data.ValidatedNel
@@ -8,7 +8,6 @@ import cats.Applicative
 import configuration.AppConfig
 import configuration.BaseAppConfig
 import controllers.mocks.*
-import controllers.test_routes.AuthRoutes.*
 import controllers.BaseController
 import dev.profunktor.redis4cats.RedisCommands
 import doobie.util.transactor.Transactor
@@ -19,9 +18,7 @@ import java.net.URI
 import java.time.Duration
 import java.time.Instant
 import models.auth.UserSession
-import models.cache.CacheErrors
-import models.cache.CacheSuccess
-import models.cache.CacheUpdateSuccess
+import models.cache.*
 import org.http4s.server.Router
 import org.http4s.HttpRoutes
 import org.http4s.Uri
@@ -41,13 +38,12 @@ object TestRoutes extends BaseAppConfig {
 
   def createTestRouter(appConfig: AppConfig, transactor: Transactor[IO]): Resource[IO, HttpRoutes[IO]] =
     for {
-      authRoutes <- authRoutes(appConfig, transactor)
-      registrationRoutes <- registrationRoutes(appConfig, transactor)
+      _ <- Resource.pure(1)
+      // registrationRoutes <- registrationRoutes(appConfig, transactor)
     } yield Router(
       "/devirl-auth-service" -> (
-        baseRoutes() <+>
-          authRoutes <+>
-          registrationRoutes
+        baseRoutes() 
+        // <+>
       )
     )
 }

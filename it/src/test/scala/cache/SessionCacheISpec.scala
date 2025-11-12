@@ -2,14 +2,12 @@ package controllers
 
 import cats.effect.kernel.Resource
 import cats.effect.IO
-import controllers.BaseController
-import controllers.ControllerISpecBase
 import models.auth.UserSession
 import models.cache.CacheUpdateSuccess
 import org.http4s.*
-import org.http4s.implicits._
+import org.http4s.implicits.*
 import org.http4s.Method.GET
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import shared.HttpClientResource
 import shared.SessionCacheResource
 import weaver.GlobalRead

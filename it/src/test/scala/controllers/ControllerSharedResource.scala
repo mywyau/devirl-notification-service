@@ -6,7 +6,6 @@ import com.comcast.ip4s.Port
 import configuration.models.*
 import configuration.AppConfig
 import configuration.BaseAppConfig
-import controllers.test_routes.TestRoutes.*
 import dev.profunktor.redis4cats.Redis
 import doobie.*
 import doobie.hikari.HikariTransactor
@@ -21,7 +20,9 @@ import org.http4s.implicits.*
 import org.http4s.server.Server
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.SelfAwareStructuredLogger
 import scala.concurrent.ExecutionContext
+import test_routes.TestRoutes.*
 import shared.HttpClientResource
 import shared.SessionCacheResource
 import shared.TransactorResource
@@ -29,6 +30,8 @@ import weaver.GlobalResource
 import weaver.GlobalWrite
 
 object ControllerSharedResource extends GlobalResource with BaseAppConfig {
+
+  implicit val testLogger: SelfAwareStructuredLogger[IO] = Slf4jLogger.getLogger[IO]
 
   def executionContextResource: Resource[IO, ExecutionContext] =
     ExecutionContexts.fixedThreadPool(4)
