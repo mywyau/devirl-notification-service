@@ -19,7 +19,6 @@ import models.Dev
 import models.UnknownUserType
 import models.UserType
 import org.typelevel.log4cats.Logger
-import repositories.UserDataRepositoryAlgebra
 
 trait SessionServiceAlgebra[F[_]] {
 
@@ -29,18 +28,12 @@ trait SessionServiceAlgebra[F[_]] {
 
   def storeOnlyCookie(userId: String, token: String): F[Unit]
 
-  def syncUserSessionFromDb(userId: String, cookieToken: String): F[ValidatedNel[CacheErrors, CacheSuccess]]
-
-  def updateUserSession(userId: String, cookieToken: String): F[ValidatedNel[CacheErrors, CacheSuccess]]
-
   def deleteSession(userId: String): F[Long]
 }
 
 class SessionServiceImpl[F[_] : Concurrent : Monad : Logger](
-  userRepo: UserDataRepositoryAlgebra[F],
   sessionCache: SessionCacheAlgebra[F]
 ) extends SessionServiceAlgebra[F] {
-
 
   override def getSessionCookieOnly(userId: String): F[Option[String]] = 
     sessionCache.getSessionCookieOnly(userId)
@@ -51,46 +44,6 @@ class SessionServiceImpl[F[_] : Concurrent : Monad : Logger](
   override def storeOnlyCookie(userId: String, cookieToken: String): F[Unit] = 
     sessionCache.storeOnlyCookie(userId, cookieToken)
 
-  override def syncUserSessionFromDb(
-    userId: String,
-    cookieToken: String
-  ): F[ValidatedNel[CacheErrors, CacheSuccess]] =
-    userRepo.findUser(userId).flatMap {
-      case Some(userDetails) =>
-        val userSession =
-          UserSession(
-            userId = userDetails.userId,
-            cookieValue = cookieToken,
-            email = userDetails.email,
-            userType = userDetails.userType.getOrElse(UnknownUserType).toString()
-          )
-        sessionCache.storeSession(userId, Some(userSession))
-      case None =>
-        Validated
-          .invalidNel[CacheErrors, CacheSuccess](CacheUpdateFailure)
-          .pure[F]
-    }
-
-  override def updateUserSession(
-    userId: String,
-    cookieToken: String
-  ): F[ValidatedNel[CacheErrors, CacheSuccess]] =
-    userRepo.findUser(userId).flatMap {
-      case Some(userDetails) =>
-        val userSession =
-          UserSession(
-            userId = userDetails.userId,
-            cookieValue = cookieToken,
-            email = userDetails.email,
-            userType = userDetails.userType.getOrElse(UnknownUserType).toString()
-          )
-        sessionCache.storeSession(userId, Some(userSession))
-      case None =>
-        Validated
-          .invalidNel[CacheErrors, CacheSuccess](CacheUpdateFailure)
-          .pure[F]
-    }
-
   override def deleteSession(userId: String): F[Long] =
     sessionCache.deleteSession(userId)
 
@@ -99,8 +52,7 @@ class SessionServiceImpl[F[_] : Concurrent : Monad : Logger](
 object SessionService {
 
   def apply[F[_] : Concurrent : Logger](
-    userRepo: UserDataRepositoryAlgebra[F],
     sessionCache: SessionCacheAlgebra[F]
   ): SessionServiceAlgebra[F] =
-    new SessionServiceImpl[F](userRepo, sessionCache)
+    new SessionServiceImpl[F](sessionCache)
 }

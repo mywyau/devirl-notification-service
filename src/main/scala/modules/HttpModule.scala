@@ -55,9 +55,7 @@ object HttpModule {
   ): HttpRoutes[F] =
     Router(
       "/devirl-auth-service" -> (
-        baseRoutes() <+>
-          authRoutes(appConfig, transactor) <+>
-          registrationRoutes(appConfig, transactor, kafkaProducers.registrationEventProducer)
+        baseRoutes()
       )
     )
 

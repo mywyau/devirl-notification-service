@@ -23,32 +23,4 @@ object Routes {
     baseController.routes
   }
 
-  def authRoutes[F[_] : Async : Logger](
-    appConfig: AppConfig,
-    transactor: HikariTransactor[F]
-  ): HttpRoutes[F] = {
-
-    val userDataRepository = new UserDataRepositoryImpl(transactor)
-    val sessionCache = SessionCache(appConfig)
-    val sessionService = SessionService(userDataRepository, sessionCache)
-    val authController = AuthController(sessionService)
-
-    authController.routes
-  }
-
-  def registrationRoutes[F[_] : Async : NonEmptyParallel : Logger](
-    appConfig: AppConfig,
-    transactor: HikariTransactor[F],
-    registrationEventProducer: RegistrationEventProducerAlgebra[F]
-  ): HttpRoutes[F] = {
-
-    val sessionCache = SessionCache(appConfig)
-    val userDataRepository = new UserDataRepositoryImpl(transactor)
-    val outboxRepositoryImpl = new OutboxRepositoryImpl(transactor)
-    val registrationService = RegistrationService(userDataRepository, outboxRepositoryImpl)
-    val registrationController = RegistrationController(registrationService, sessionCache)
-
-    registrationController.routes
-  }
-
 }
