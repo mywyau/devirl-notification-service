@@ -12,7 +12,7 @@ To set up the postgres db please run scripts from repo:
 
 1. ./setup_postgres.sh
 1. ./setup_postgres_it.sh
-2. ./setup_flyway_migrations.sh
+1. ./setup_flyway_migrations.sh
 
 (Note to run and test locally this is not necessarily needed but can be ran to check the docker container build)
 To build the Application docker container locally:
@@ -91,7 +91,7 @@ sbt test
 
 ### Application Config:
 
-APP_ENV environment variable controls which app config is ran with "local" being the default when running the application locally 
+APP_ENV environment variable controls which app config is ran with "local" being the default when running the application locally
 
 Running integration tests APP_ENV is set to "integration" in build.sbt, hence referencing:
 
@@ -101,12 +101,11 @@ devirl_auth_service/src/main/resources/application.integration.conf
 
 ### Production App Config
 
-Production build dockerfile ENV APP_ENV=prod hence referencing: 
+Production build dockerfile ENV APP_ENV=prod hence referencing:
 
 ```
 devirl_auth_service/src/main/resources/application.prod.conf
 ```
-
 
 ### To run only a single test suite in the integration tests:
 
@@ -142,7 +141,7 @@ turnip
 ### To connect to TEST postgresql Database
 
 ```
-psql -h localhost -p 5434 -U dev_auth_test_user -d dev_auth_test_db
+psql -h localhost -p 5434 -U dev_notification_test_user -d dev_notification_test_db
 ```
 
 #### TEST Database Password:
@@ -160,14 +159,15 @@ Only needed if using multiple schemas in the db. At the moment we are using publ
 ```
 ALTER ROLE shared_user SET search_path TO share_schema, public;
 ```
+
 ---
 
 ### Mermaid Wireframe Diagrams
 
-To view any mermaid diagrams 
+To view any mermaid diagrams
 
 ```
-command+shift+v 
+command+shift+v
 ```
 
 ### Mermaid diagram notes export to images (for READMEs, docs, or Confluence)

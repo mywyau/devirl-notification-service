@@ -27,11 +27,11 @@ object IntegrationConfigConstants {
 
   val itPostgresqlConfig =
     PostgresqlConfig(
-      dbName = "dev_auth_test_db",
+      dbName = "dev_notification_test_db",
       dockerHost = "dev-auth-db-it",
       host = "localhost",
       port = 5434,
-      username = "dev_auth_test_user",
+      username = "dev_notification_test_user",
       password = "turnip",
       maxPoolSize = 42
     )
