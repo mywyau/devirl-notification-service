@@ -1,7 +1,5 @@
 package controllers
 
-package controllers
-
 import cats.effect.*
 import cats.implicits.*
 import fs2.concurrent.Topic

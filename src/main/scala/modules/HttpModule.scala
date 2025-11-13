@@ -54,8 +54,9 @@ object HttpModule {
     kafkaProducers: KafkaProducers[F]
   ): HttpRoutes[F] =
     Router(
-      "/devirl-auth-service" -> (
-        baseRoutes()
+      "/devirl-notification-service" -> (
+        baseRoutes() <+>
+          notificationRoutes(appConfig, transactor)
       )
     )
 

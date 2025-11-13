@@ -4,7 +4,7 @@ ThisBuild / parallelExecution := true
 
 lazy val root = (project in file("."))
   .settings(
-    name := "devirl-auth-service",
+    name := "devirl-notification-service",
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
     Compile / run / fork := true,
     // scalaSource := baseDirectory.value / "src" / "main" / "scala",
