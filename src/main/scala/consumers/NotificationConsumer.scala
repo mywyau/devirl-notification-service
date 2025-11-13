@@ -1,7 +1,5 @@
 package consumers
 
-package kafka.consumers
-
 import cats.effect.*
 import cats.syntax.all.*
 import fs2.concurrent.Topic
@@ -10,9 +8,11 @@ import fs2.Stream
 import io.circe.generic.auto.*
 import io.circe.parser.decode
 import models.Notification
+import models.NotificationEvent
 import org.typelevel.log4cats.Logger
 import repositories.NotificationRepositoryAlgebra
 import scala.concurrent.duration.*
+import services.NotificationMapper
 
 final class NotificationConsumer[F[_] : Async : Logger](
   topic: Topic[F, Notification],
@@ -29,16 +29,19 @@ final class NotificationConsumer[F[_] : Async : Logger](
       .records
       .evalMap { committable =>
         val record = committable.record
-        decode[Notification](record.value) match {
-          case Right(notification) =>
+
+        decode[NotificationEvent](record.value) match {
+          case Right(event) =>
+            val notification = NotificationMapper.fromEvent(event)
             for {
+              _ <- Logger[F].info(s"[KafkaConsumer] Received ${notification.eventType} for ${notification.userId}")
               _ <- repo.insert(notification)
               _ <- topic.publish1(notification)
             } yield committable.offset
+
           case Left(err) =>
-            Logger[F].error(s"Decode error: ${err.getMessage}").as(committable.offset)
+            Logger[F].error(s"[KafkaConsumer] Decode error: ${err.getMessage}").as(committable.offset)
         }
       }
       .through(commitBatchWithin(100, 10.seconds))
-
 }

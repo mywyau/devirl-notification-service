@@ -8,11 +8,13 @@ import cats.NonEmptyParallel
 import com.comcast.ip4s.*
 import configuration.AppConfig
 import configuration.ConfigReader
+import consumers.NotificationConsumer
 import controllers.NotificationSocketRoutes
 import dev.profunktor.redis4cats.RedisCommands
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
 import fs2.concurrent.Topic
+import fs2.kafka.AutoOffsetReset
 import fs2.kafka.ConsumerSettings
 import fs2.Stream
 import infrastructure.KafkaProducerProvider
@@ -42,9 +44,6 @@ import routes.Routes.*
 import scala.concurrent.duration.*
 import scala.concurrent.duration.DurationInt
 import services.*
-import services.OutboxPublisherService
-import fs2.kafka.AutoOffsetReset
-import consumers.kafka.consumers.NotificationConsumer
 
 object Main extends IOApp {
 
@@ -57,14 +56,15 @@ object Main extends IOApp {
         config: AppConfig <- Resource.eval(ConfigReader[IO].loadAppConfig)
         transactor: HikariTransactor[IO] <- DatabaseModule.make[IO](config)
         redis: RedisCommands[IO, String, String] <- RedisModule.make[IO](config)
-        kafkaProducers: KafkaProducers[IO] <- KafkaModule.make[IO](config)
+        // kafkaProducers: KafkaProducers[IO] <- KafkaModule.make[IO](config)
         httpClient: Client[IO] <- HttpClientModule.make[IO]
-        httpApp: Kleisli[IO, Request[IO], Response[IO]] <- HttpModule.make(config, transactor, kafkaProducers)
+        httpApp: Kleisli[IO, Request[IO], Response[IO]] <- HttpModule.make(config, transactor)
         host: Host <- Resource.eval(IO.fromOption(Host.fromString(config.serverConfig.host))(new RuntimeException("Invalid host in configuration")))
         port: Port <- Resource.eval(IO.fromOption(Port.fromInt(config.serverConfig.port))(new RuntimeException("Invalid port in configuration")))
 
         notificationRepo = NotificationRepository[IO](transactor)
-        // 3️⃣ Set up Kafka consumer configuration
+
+        //  Set up Kafka consumer configuration
         kafkaConsumerSettings =
           ConsumerSettings[IO, String, String]
             .withBootstrapServers(config.kafkaConfig.bootstrapServers)
@@ -73,7 +73,7 @@ object Main extends IOApp {
 
         initNotification =
           Notification(
-            id = UUID.randomUUID().toString,
+            notificationId = UUID.randomUUID().toString,
             userId = "system",
             title = "init",
             message = "topic started",
@@ -82,14 +82,13 @@ object Main extends IOApp {
             read = true
           )
 
-        // ✅ Create Topic inside Resource
+        // Create Topic inside Resource
         topic <- Resource.eval(Topic[IO, Notification])
         socketRoutes = new NotificationSocketRoutes[IO](topic)
         consumer = new NotificationConsumer[IO](topic, notificationRepo, kafkaConsumerSettings)
         _ <- Resource.eval(consumer.stream.compile.drain.start)
 
-
-        // ✅ Combine REST + WebSocket routes
+        // Combine REST + WebSocket routes
         server <- EmberServerBuilder
           .default[IO]
           .withHost(host)
@@ -102,7 +101,7 @@ object Main extends IOApp {
 
       } yield server
 
-    // ✅ Keep server alive
+    // Keep server alive
     serverResource.use(_ => IO.never).as(ExitCode.Success)
   }
 }

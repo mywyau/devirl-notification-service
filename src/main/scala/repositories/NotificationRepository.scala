@@ -22,9 +22,9 @@ trait NotificationRepositoryAlgebra[F[_]] {
 
   def getByUserIdPaged(userId: String, page: Int, pageSize: Int): F[List[Notification]]
 
-  def getOwnerOf(id: String): F[Option[String]]
+  def getOwnerOf(notificationId: String): F[Option[String]]
 
-  def markAsRead(id: String): F[Int]
+  def markAsRead(notificationId: String): F[Int]
   
   def insert(n: Notification): F[Int]
 }
@@ -37,7 +37,7 @@ class NotificationRepositoryImpl[F[_] : MonadCancelThrow](xa: Transactor[F]) ext
 
   override def getByUserId(userId: String): F[List[Notification]] =
     sql"""
-      SELECT id, user_id, title, message, event_type, created_at, read
+      SELECT notification_id, user_id, title, message, event_type, created_at, read
       FROM notifications
       WHERE user_id = $userId
       ORDER BY created_at DESC
@@ -49,7 +49,7 @@ class NotificationRepositoryImpl[F[_] : MonadCancelThrow](xa: Transactor[F]) ext
   override def getByUserIdPaged(userId: String, page: Int, pageSize: Int): F[List[Notification]] = {
     val offset = page * pageSize
     sql"""
-      SELECT id, user_id, title, message, event_type, created_at, read
+      SELECT notification_id, user_id, title, message, event_type, created_at, read
       FROM notifications
       WHERE user_id = $userId
       ORDER BY created_at DESC
@@ -60,28 +60,28 @@ class NotificationRepositoryImpl[F[_] : MonadCancelThrow](xa: Transactor[F]) ext
       .transact(xa)
   }
 
-  override def getOwnerOf(id: String): F[Option[String]] =
+  override def getOwnerOf(notificationId: String): F[Option[String]] =
     sql"""
-      SELECT user_id FROM notifications WHERE id = $id
+      SELECT user_id FROM notifications WHERE notification_id = $notificationId
     """
       .query[String]
       .option
       .transact(xa)
 
-  override def markAsRead(id: String): F[Int] =
+  override def markAsRead(notificationId: String): F[Int] =
     sql"""
       UPDATE notifications
       SET read = TRUE
-      WHERE id = $id
+      WHERE notification_id = $notificationId
     """.update.run
       .transact(xa)
 
   override def insert(n: Notification): F[Int] =
     sql"""
       INSERT INTO notifications (
-        id, user_id, title, message, event_type, created_at, read
+        notification_id, user_id, title, message, event_type, created_at, read
       ) VALUES (
-        ${n.id}, ${n.userId}, ${n.title}, ${n.message}, ${n.eventType}, ${n.createdAt}, ${n.read}
+        ${n.notificationId}, ${n.userId}, ${n.title}, ${n.message}, ${n.eventType}, ${n.createdAt}, ${n.read}
       )
     """.update.run
       .transact(xa)
