@@ -55,7 +55,7 @@ class NotificationKafkaEndToEndISpec(global: GlobalRead) extends IOSuite {
     val kafkaProducer = sharedResource._1
     val transactor = sharedResource._2
 
-    val topicName = s"notifications.test.${System.currentTimeMillis()}"
+    val topicName = s"notifications"
 
     // Create a NotificationEvent (e.g. quest completed)
     val event =
