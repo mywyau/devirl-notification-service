@@ -5,6 +5,7 @@ import cats.NonEmptyParallel
 import configuration.AppConfig
 import controllers.*
 import doobie.hikari.HikariTransactor
+import doobie.util.transactor.Transactor
 import infrastructure.*
 import java.net.URI
 import kafka.*
@@ -21,6 +22,19 @@ object Routes {
     val baseController = BaseController()
 
     baseController.routes
+  }
+
+  def notificationRoutes[F[_] : Async: Concurrent : Logger](
+    appConfig: AppConfig,
+    transactor: Transactor[F]
+  ): HttpRoutes[F] = {
+
+    val sessionCache = SessionCache(appConfig)
+    val notificationRepository = NotificationRepository(transactor)
+    val notificationService = NotificationService(notificationRepository)
+    val notificationController = NotificationController(sessionCache, notificationService)
+
+    notificationController.routes
   }
 
 }

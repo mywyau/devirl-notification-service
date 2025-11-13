@@ -31,8 +31,8 @@ trait NotificationControllerAlgebra[F[_]] {
 }
 
 class NotificationControllerImpl[F[_] : Async : Concurrent : Logger](
-  notificationService: NotificationServiceAlgebra[F],
-  sessionCache: SessionCacheAlgebra[F]
+  sessionCache: SessionCacheAlgebra[F],
+  notificationService: NotificationServiceAlgebra[F]
 ) extends Http4sDsl[F]
     with NotificationControllerAlgebra[F] {
 
@@ -62,7 +62,9 @@ class NotificationControllerImpl[F[_] : Async : Concurrent : Logger](
         Ok(GetResponse("/devirl-auth-service/Notification/health", "I am alive - NotificationControllerImpl").asJson)
 
     case req @ GET -> Root / "notifications" / userId =>
+
       val requesterId = userId // replace with actual auth lookup later
+      
       notificationService.listForUser(requesterId, userId, page = 0, pageSize = 20).flatMap {
         case Right(list) => Ok(list.asJson)
         case Left(NotFound) => NotFound()
@@ -104,8 +106,8 @@ class NotificationControllerImpl[F[_] : Async : Concurrent : Logger](
 object NotificationController {
 
   def apply[F[_] : Async : Concurrent](
-    notificationService: NotificationServiceAlgebra[F],
-    sessionCache: SessionCacheAlgebra[F]
+    sessionCache: SessionCacheAlgebra[F],
+    notificationService: NotificationServiceAlgebra[F]
   )(implicit logger: Logger[F]): NotificationControllerAlgebra[F] =
-    new NotificationControllerImpl[F](notificationService, sessionCache)
+    new NotificationControllerImpl[F](sessionCache, notificationService)
 }

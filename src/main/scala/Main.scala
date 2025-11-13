@@ -1,38 +1,48 @@
+import cats.NonEmptyParallel
+import cats.data.Kleisli
 import cats.effect.*
+import cats.effect.IO
+import cats.effect.IOApp
 import cats.implicits.*
 import cats.syntax.all.*
-import cats.NonEmptyParallel
 import com.comcast.ip4s.*
 import configuration.AppConfig
 import configuration.ConfigReader
+import controllers.NotificationSocketRoutes
+import dev.profunktor.redis4cats.RedisCommands
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
 import fs2.Stream
+import fs2.concurrent.Topic
 import infrastructure.KafkaProducerProvider
-import java.time.*
-import java.time.temporal.ChronoUnit
 import middleware.Middleware.throttleMiddleware
+import models.*
 import modules.*
+import org.http4s.HttpRoutes
+import org.http4s.Method
+import org.http4s.Request
+import org.http4s.Response
+import org.http4s.Uri
 import org.http4s.client.Client
 import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.headers.Origin
 import org.http4s.implicits.*
-import org.http4s.server.middleware.CORS
 import org.http4s.server.Router
 import org.http4s.server.Server
-import org.http4s.HttpRoutes
-import org.http4s.Method
-import org.http4s.Uri
+import org.http4s.server.middleware.CORS
 import org.typelevel.ci.CIString
-import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import repositories.*
 import routes.Routes.*
-import scala.concurrent.duration.*
-import scala.concurrent.duration.DurationInt
 import services.*
 import services.OutboxPublisherService
+
+import java.time.Instant
+import java.util.UUID
+import scala.concurrent.duration.*
+import scala.concurrent.duration.DurationInt
 
 object Main extends IOApp {
 
@@ -40,26 +50,46 @@ object Main extends IOApp {
 
   override def run(args: List[String]): IO[ExitCode] = {
 
-    val serverResource: Resource[IO, Server] =
+    val serverResource: Resource[IO, org.http4s.server.Server] =
       for {
-        config <- Resource.eval(ConfigReader[IO].loadAppConfig)
-        transactor <- DatabaseModule.make[IO](config)
-        redis <- RedisModule.make[IO](config)
-        kafkaProducers <- KafkaModule.make[IO](config)
-        httpClient <- HttpClientModule.make[IO]
-        httpApp <- HttpModule.make(config, transactor, kafkaProducers)
-        // _ <- OutboxModule.make[IO](transactor, kafkaProducers.registrationEventProducer)
-        host <- Resource.eval(IO.fromOption(Host.fromString(config.serverConfig.host))(new RuntimeException("Invalid host in configuration")))
-        port <- Resource.eval(IO.fromOption(Port.fromInt(config.serverConfig.port))(new RuntimeException("Invalid port in configuration")))
+        config: AppConfig <- Resource.eval(ConfigReader[IO].loadAppConfig)
+        transactor: HikariTransactor[IO] <- DatabaseModule.make[IO](config)
+        redis: RedisCommands[IO, String, String] <- RedisModule.make[IO](config)
+        kafkaProducers: KafkaProducers[IO] <- KafkaModule.make[IO](config)
+        httpClient: Client[IO] <- HttpClientModule.make[IO]
+        httpApp: Kleisli[IO, Request[IO], Response[IO]] <- HttpModule.make(config, transactor, kafkaProducers)
+        host: Host <- Resource.eval(IO.fromOption(Host.fromString(config.serverConfig.host))(new RuntimeException("Invalid host in configuration")))
+        port: Port <- Resource.eval(IO.fromOption(Port.fromInt(config.serverConfig.port))(new RuntimeException("Invalid port in configuration")))
+
+        initNotification =
+          Notification(
+            id = UUID.randomUUID().toString,
+            userId = "system",
+            title = "init",
+            message = "topic started",
+            eventType = "system.init",
+            createdAt = Instant.now(),
+            read = true
+          )
+
+        // ✅ Create Topic inside Resource
+        topic <- Resource.eval(Topic[IO, Notification])
+        socketRoutes = new NotificationSocketRoutes[IO](topic)
+
+        // ✅ Combine REST + WebSocket routes
         server <- EmberServerBuilder
           .default[IO]
           .withHost(host)
           .withPort(port)
-          .withHttpApp(httpApp)
+          .withHttpWebSocketApp { wsBuilder =>
+            val combinedApp: org.http4s.HttpApp[IO] = socketRoutes.routes(wsBuilder).orNotFound <+> httpApp
+            combinedApp
+          }
           .build
+
       } yield server
 
-    // Run the server forever
+    // ✅ Keep server alive
     serverResource.use(_ => IO.never).as(ExitCode.Success)
   }
 }
