@@ -1,179 +1,128 @@
-# devirl_auth_service
+# 📨 devirl-notification-service
 
-Auth backend microservice codebase
+**Notification microservice for the Dev IRL platform.**
 
-### Order of setup scripts:
-
-To run the app locally and run integration tests
-
-To set up the postgres db please run scripts from repo:
-
-### dev-irl-database-setup
-
-1. ./setup_postgres.sh
-1. ./setup_postgres_it.sh
-1. ./setup_flyway_migrations.sh
-
-(Note to run and test locally this is not necessarily needed but can be ran to check the docker container build)
-To build the Application docker container locally:
-
-```
- ./setup_app.sh
-```
-
-### connect to redis
-
-### run redis test container for integration testing, port: 6380
-
-```
-docker run --name redis-test-container -p 6380:6379 -d redis
-```
-
-#### Run redis-server on port 6379:
-
-```
-redis-server
-```
-
-#### Run redis-cli to enter cli
-
-```
-redis-cli
-```
-
-```
-keys *
-```
-
-```
-get <keyId>
-```
-
-```
-del <keyId>
-```
-
-### To run the app locally
-
-```
-./run.sh
-```
-
-or
-
-```
-sbt run
-```
-
-### To run the unit tests
-
-```
-./run_tests.sh
-```
-
-or
-
-```
-sbt test
-```
-
-### To run the integration tests
-
-```
-./run_tests.sh
-```
-
-or
-
-```
-sbt test
-```
-
-### Application Config:
-
-APP_ENV environment variable controls which app config is ran with "local" being the default when running the application locally
-
-Running integration tests APP_ENV is set to "integration" in build.sbt, hence referencing:
-
-```
-devirl_auth_service/src/main/resources/application.integration.conf
-```
-
-### Production App Config
-
-Production build dockerfile ENV APP_ENV=prod hence referencing:
-
-```
-devirl_auth_service/src/main/resources/application.prod.conf
-```
-
-### To run only a single test suite in the integration tests:
-
-Please remember to include the package/path for the shared resources,
-the shared resources is needed to help WeaverTests locate the shared resources needed for the tests
-
-```
-./itTestOnly QuestRegistrationControllerISpec controllers.ControllerSharedResource
-```
+This service handles **real-time** and **persistent notifications**, integrating **Kafka**, **PostgreSQL**, **Redis**, and **WebSockets** using the **Typelevel stack** — including Cats Effect, FS2, Http4s, and Doobie.
 
 ---
 
-### To clear down docker container for app and orphans
+## 🚀 Overview
 
-```
-docker-compose down --volumes --remove-orphans
-```
+The `devirl-notification-service` is responsible for receiving, storing, and broadcasting notifications triggered by events from other microservices (e.g., quest completion, payments, profile updates).
 
----
-
-### To connect to postgresql database
-
-```
-psql -h localhost -p 5432 -U dev_quest_user -d dev_quest_db
-```
-
-#### App Database Password:
-
-```
-turnip
-```
-
-### To connect to TEST postgresql Database
-
-```
-psql -h localhost -p 5434 -U dev_notification_test_user -d dev_notification_test_db
-```
-
-#### TEST Database Password:
-
-```
-turnip
-```
+It listens to Kafka topics, stores notifications in Postgres for history, and streams them live via WebSockets to connected frontend users.
 
 ---
 
-### Set base search path for schema
+## 🧩 Architecture Summary
 
-Only needed if using multiple schemas in the db. At the moment we are using public so no need beforehand accidentally set a new schema in flyway conf
+### 1️⃣ Kafka Consumer
+- Subscribes to the `notifications` topic.
+- Decodes incoming JSON messages into `NotificationEvent`s.
+- Maps each event into a domain-level `Notification`.
+- Persists the notification into **PostgreSQL**.
+- Publishes it into an **FS2 Topic** for in-memory pub/sub distribution.
 
-```
-ALTER ROLE shared_user SET search_path TO share_schema, public;
-```
+### 2️⃣ FS2 Topic (Pub/Sub Layer)
+- Acts as an in-memory message bus.
+- Broadcasts new notifications to all connected WebSocket clients.
+- Each client receives only their own relevant messages.
+
+### 3️⃣ WebSocket Endpoint
+- Exposes `/ws/:userId`.
+- Streams new notifications in real time to the frontend (e.g. toast popups).
+- Powered by FS2 + Http4s WebSocket streams.
+
+### 4️⃣ HTTP Endpoints
+- Provide REST access to stored notifications for history or pagination.
+
+### 5️⃣ PostgreSQL
+- Stores notifications persistently.
+- Each notification has an auto-incremented `id` and a unique `notification_id` (UUID).
+
+### 6️⃣ Redis
+- Used for caching or future scaling features (e.g., deduplication or user session state).
 
 ---
 
-### Mermaid Wireframe Diagrams
+## ⚙️ Data Flow
 
-To view any mermaid diagrams
+Kafka Topic ---> NotificationConsumer ---> PostgreSQL
+|
+v
+FS2 Topic
+|
+v
+WebSocket Clients
 
+
+---
+
+## 🧪 Testing
+
+Integration tests run using **Weaver + Cats Effect** with Kafka and Postgres:
+
+- Each test creates a unique Kafka topic (e.g., `notifications.test.<timestamp>`).
+- The consumer listens for events, persists them to Postgres, and publishes to the FS2 Topic.
+- The test asserts that the record exists in the database after consumption.
+
+---
+
+## 🧰 Tech Stack
+
+| Component | Technology |
+|------------|-------------|
+| Language | Scala 3 |
+| Concurrency / Effects | Cats Effect 3, FS2 |
+| Web Framework | Http4s |
+| Database | PostgreSQL (via Doobie) |
+| Messaging | Kafka (via fs2-kafka) |
+| Cache | Redis (via redis4cats) |
+| Logging | Log4Cats (Slf4j + Logback) |
+
+---
+
+## 🧑‍💻 Local Development
+
+### 🐳 Start dependencies
+
+```bash
+docker-compose up -d postgres redis kafka
 ```
-command+shift+v
+
+
+### Kafka commands
+
+#### List topics
+```
+docker exec -it kafka-container-redpanda-1 rpk topic list --brokers localhost:9092
 ```
 
-### Mermaid diagram notes export to images (for READMEs, docs, or Confluence)
 
-This can be in a separate repo so we do not install the dependency here.
-
+#### Describe a topic
 ```
-npm install -g @mermaid-js/mermaid-cli
+docker exec -it kafka-container-redpanda-1 rpk topic describe notifications --brokers localhost:9092
+```
+
+#### Delete a topic
+```
+docker exec -it kafka-container-redpanda-1 rpk topic delete notifications --brokers localhost:9092
+```
+
+#### Connect to a websocket
+```
+websocat ws://localhost:8080/ws/test-user
+```
+
+#### You should see a response like this:
+```
+{
+  "id": "e82b2d91-2d6c-4d2c-bd7f-0cfa3a3f5a7e",
+  "userId": "test-user",
+  "title": "Quest Completed!",
+  "message": "Your quest has been verified and completed.",
+  "eventType": "quest.completed",
+  "createdAt": "2025-11-13T01:01:41.602Z",
+  "read": false
+}
 ```
