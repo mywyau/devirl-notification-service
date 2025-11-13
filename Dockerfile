@@ -16,4 +16,4 @@ EXPOSE 8080
 ENV APP_ENV=prod
 
 # Default command (native-packager generates this script)
-CMD ["/bin/devirl-auth-service"]
+CMD ["/bin/devirl-notification-service"]

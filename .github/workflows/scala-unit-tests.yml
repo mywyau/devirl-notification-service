@@ -1,4 +1,4 @@
-name: devirl-auth-service Unit and Integration Tests
+name: devirl-notification-service Unit and Integration Tests
 
 on:
   push:
@@ -178,7 +178,7 @@ jobs:
       #   run: |
       #     aws --endpoint-url=${AWS_ENDPOINT_URL} \
       #         s3api create-bucket \
-      #         --bucket test-bucket   
+      #         --bucket test-bucket
 
       - name: Run Integration Tests
         run: sbt it/test

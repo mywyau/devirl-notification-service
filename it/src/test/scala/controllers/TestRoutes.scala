@@ -41,8 +41,8 @@ object TestRoutes extends BaseAppConfig {
       _ <- Resource.pure(1)
       // registrationRoutes <- registrationRoutes(appConfig, transactor)
     } yield Router(
-      "/devirl-auth-service" -> (
-        baseRoutes() 
+      "/devirl-notification-service" -> (
+        baseRoutes()
         // <+>
       )
     )

@@ -28,9 +28,9 @@ object LocalAppConfigConstants {
   val containerPostgreSqlConfig =
     PostgresqlConfig(
       dbName = "dev_notification_db",
-      dockerHost = "dev-auth-db",
+      dockerHost = "dev-notification-db",
       host = "localhost",
-      port = 5433,
+      port = 5436,
       username = "dev_notification_user",
       password = "turnip",
       maxPoolSize = 42
@@ -46,7 +46,7 @@ object LocalAppConfigConstants {
   val kafkaConfig =
     KafkaConfig(
       bootstrapServers = "localhost:9092",
-      clientId = "devirl-auth-service",
+      clientId = "devirl-notification-service",
       acks = "all",
       lingerMs = 5,
       retries = 10,

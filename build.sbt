@@ -20,7 +20,7 @@ lazy val root = (project in file("."))
 lazy val it = (project in file("it"))
   .dependsOn(root)
   .settings(
-    name := "devirl-auth-service-it",
+    name := "devirl-notification-service-it",
     libraryDependencies ++= AppDependencies.integrationTest,
     fork := true,
     parallelExecution := true,
@@ -31,4 +31,3 @@ lazy val it = (project in file("it"))
 
 enablePlugins(ScalafmtPlugin)
 enablePlugins(JavaAppPackaging, DockerPlugin)
-

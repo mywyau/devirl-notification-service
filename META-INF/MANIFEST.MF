@@ -1,10 +1,10 @@
 Manifest-Version: 1.0
 Main-Class: Main
-Specification-Title: devirl-auth-service
+Specification-Title: devirl-notification-service
 Specification-Version: 0.1.0-SNAPSHOT
-Specification-Vendor: devirl-auth-service
-Implementation-Title: devirl-auth-service
+Specification-Vendor: devirl-notification-service
+Implementation-Title: devirl-notification-service
 Implementation-Version: 0.1.0-SNAPSHOT
-Implementation-Vendor: devirl-auth-service
-Implementation-Vendor-Id: devirl-auth-service
+Implementation-Vendor: devirl-notification-service
+Implementation-Vendor-Id: devirl-notification-service
 

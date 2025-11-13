@@ -2,29 +2,28 @@ package controllers
 
 import cats.data.Validated.Invalid
 import cats.data.Validated.Valid
-import cats.effect.Concurrent
 import cats.effect.kernel.Async
+import cats.effect.Concurrent
 import cats.implicits.*
 import fs2.Stream
 import infrastructure.SessionCacheAlgebra
-import io.circe.Json
 import io.circe.syntax.EncoderOps
+import io.circe.Json
+import java.time.Instant
+import java.util.UUID
 import models.*
 import models.database.UpdateSuccess
 import models.responses.*
 import models.users.*
 import org.http4s.*
-import org.http4s.Challenge
 import org.http4s.circe.*
 import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.`WWW-Authenticate`
 import org.http4s.syntax.all.http4sHeaderSyntax
+import org.http4s.Challenge
 import org.typelevel.log4cats.Logger
-import services.NotificationServiceAlgebra
-
-import java.time.Instant
-import java.util.UUID
 import scala.concurrent.duration.*
+import services.NotificationServiceAlgebra
 
 trait NotificationControllerAlgebra[F[_]] {
   def routes: HttpRoutes[F]
@@ -59,12 +58,11 @@ class NotificationControllerImpl[F[_] : Async : Concurrent : Logger](
 
     case req @ GET -> Root / "notification" / "health" =>
       Logger[F].debug(s"[BaseControllerImpl] GET - Health check for backend NotificationController service") *>
-        Ok(GetResponse("/devirl-auth-service/Notification/health", "I am alive - NotificationControllerImpl").asJson)
+        Ok(GetResponse("/devirl-notification-service/Notification/health", "I am alive - NotificationControllerImpl").asJson)
 
     case req @ GET -> Root / "notifications" / userId =>
-
       val requesterId = userId // replace with actual auth lookup later
-      
+
       notificationService.listForUser(requesterId, userId, page = 0, pageSize = 20).flatMap {
         case Right(list) => Ok(list.asJson)
         case Left(NotFound) => NotFound()

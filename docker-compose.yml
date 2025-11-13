@@ -1,11 +1,11 @@
 version: "3.8"
 
 services:
-  devirl-auth-service:
+  devirl-notification-service:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: devirl-auth-service-app
+    container_name: devirl-notification-service-app
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
