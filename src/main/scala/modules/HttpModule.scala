@@ -50,8 +50,7 @@ object HttpModule {
 
   private def allRoutes[F[_] : Async : Parallel : Logger](
     appConfig: AppConfig,
-    transactor: HikariTransactor[F],
-    kafkaProducers: KafkaProducers[F]
+    transactor: HikariTransactor[F]
   ): HttpRoutes[F] =
     Router(
       "/devirl-notification-service" -> (
@@ -63,13 +62,12 @@ object HttpModule {
   def make[F[_] : Async : Parallel : Logger](
     appConfig: AppConfig,
     transactor: HikariTransactor[F],
-    kafkaProducers: KafkaProducers[F]
   ): Resource[F, HttpApp[F]] = {
 
     val redisHost = appConfig.redisConfig.host
     val redisPort = appConfig.redisConfig.port
 
-    val rawRoutes = allRoutes(appConfig, transactor, kafkaProducers)
+    val rawRoutes = allRoutes(appConfig, transactor)
 
     val withCors =
       if (appConfig.featureSwitches.useCors) corsPolicy(rawRoutes)

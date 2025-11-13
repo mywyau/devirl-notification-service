@@ -1,5 +1,7 @@
 package services
 
+import cats.Monad
+import cats.NonEmptyParallel
 import cats.data.NonEmptyList
 import cats.data.Validated
 import cats.data.Validated.Invalid
@@ -8,30 +10,28 @@ import cats.data.ValidatedNel
 import cats.effect.Concurrent
 import cats.implicits.*
 import cats.syntax.all.*
-import cats.Monad
-import cats.NonEmptyParallel
 import doobie.implicits.*
 import doobie.util.transactor.Transactor
 import fs2.Stream
 import io.circe.syntax.*
-import java.time.Instant
-import java.util.UUID
 import kafka.*
 import kafka.events.*
 import models.*
-import models.database.*
-import models.database.DatabaseErrors
-import models.database.DatabaseSuccess
-import models.outbox.OutboxEvent
-import models.users.*
 import models.Forbidden
 import models.NotFound
 import models.Notification
 import models.NotificationErr
 import models.UserType
+import models.database.DatabaseErrors
+import models.database.DatabaseSuccess
+import models.users.*
 import org.typelevel.log4cats.Logger
 import repositories.NotificationRepositoryAlgebra
-import repositories.OutboxRepositoryAlgebra
+
+import java.time.Instant
+import java.util.UUID
+
+import models.database.*
 
 trait NotificationServiceAlgebra[F[_]] {
 
@@ -76,7 +76,7 @@ class NotificationServiceImpl[F[_] : Concurrent : Monad : Logger](
 
   def createSystemNotification(targetUserId: String, title: String, message: String, eventType: String): F[Notification] = {
     val n = Notification(
-      id = UUID.randomUUID().toString,
+      notificationId = UUID.randomUUID().toString,
       userId = targetUserId,
       title = sanitize(title),
       message = message.take(2000),

@@ -44,7 +44,6 @@ import routes.Routes.*
 import scala.concurrent.duration.*
 import scala.concurrent.duration.DurationInt
 import services.*
-import services.OutboxPublisherService
 
 object Main extends IOApp {
 
@@ -57,9 +56,9 @@ object Main extends IOApp {
         config: AppConfig <- Resource.eval(ConfigReader[IO].loadAppConfig)
         transactor: HikariTransactor[IO] <- DatabaseModule.make[IO](config)
         redis: RedisCommands[IO, String, String] <- RedisModule.make[IO](config)
-        kafkaProducers: KafkaProducers[IO] <- KafkaModule.make[IO](config)
+        // kafkaProducers: KafkaProducers[IO] <- KafkaModule.make[IO](config)
         httpClient: Client[IO] <- HttpClientModule.make[IO]
-        httpApp: Kleisli[IO, Request[IO], Response[IO]] <- HttpModule.make(config, transactor, kafkaProducers)
+        httpApp: Kleisli[IO, Request[IO], Response[IO]] <- HttpModule.make(config, transactor)
         host: Host <- Resource.eval(IO.fromOption(Host.fromString(config.serverConfig.host))(new RuntimeException("Invalid host in configuration")))
         port: Port <- Resource.eval(IO.fromOption(Port.fromInt(config.serverConfig.port))(new RuntimeException("Invalid port in configuration")))
 
@@ -74,7 +73,7 @@ object Main extends IOApp {
 
         initNotification =
           Notification(
-            id = UUID.randomUUID().toString,
+            notificationId = UUID.randomUUID().toString,
             userId = "system",
             title = "init",
             message = "topic started",

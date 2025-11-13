@@ -27,7 +27,7 @@ class NotificationSocketRoutes[F[_] : Async](
   private val dummyStream: Stream[F, Notification] =
     Stream.awakeEvery[F](3.seconds).map { _ =>
       Notification(
-        id = UUID.randomUUID().toString(),
+        notificationId = UUID.randomUUID().toString,
         userId = "test-user",
         title = "Dummy Notification",
         message = "You have a new dummy event!",

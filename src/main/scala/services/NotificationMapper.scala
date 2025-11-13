@@ -3,8 +3,8 @@ package services
 import java.time.Instant
 import java.util.UUID
 import models.Notification
-import models.NotificationEvent
 import models.NotificationEvent.*
+import models.NotificationEvent
 
 object NotificationMapper {
 
@@ -12,7 +12,7 @@ object NotificationMapper {
     event match {
       case QuestCompleted(userId, questTitle, reward) =>
         Notification(
-          id = UUID.randomUUID().toString,
+          notificationId = UUID.randomUUID().toString,
           userId = userId,
           title = "Quest Completed!",
           message = s"You finished '$questTitle' and earned $$${reward}.",
@@ -23,7 +23,7 @@ object NotificationMapper {
 
       case QuestPaid(userId, amount) =>
         Notification(
-          id = UUID.randomUUID().toString,
+          notificationId = UUID.randomUUID().toString,
           userId = userId,
           title = "Payment Received",
           message = s"You were paid $$${amount}.",
@@ -34,7 +34,7 @@ object NotificationMapper {
 
       case QuestUpdated(userId, questTitle) =>
         Notification(
-          id = UUID.randomUUID().toString,
+          notificationId = UUID.randomUUID().toString,
           userId = userId,
           title = "Quest Updated",
           message = s"The quest '$questTitle' was updated.",
