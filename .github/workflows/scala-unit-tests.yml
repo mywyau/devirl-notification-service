@@ -52,10 +52,10 @@ jobs:
       REDIS_PORT: "6380"
 
       DB_HOST: localhost
-      DB_PORT: "5431"
-      DB_USER: dev_quest_test_user
+      DB_PORT: "5436"
+      DB_USER: dev_notification_test_user
       DB_PASSWORD: turnip
-      DB_NAME: dev_quest_test_db
+      DB_NAME: dev_notification_test_db
 
       # LocalStack environment variables
       AWS_ACCESS_KEY_ID: test
@@ -68,13 +68,13 @@ jobs:
       postgres:
         image: postgres:14
         env:
-          POSTGRES_USER: dev_quest_test_user
+          POSTGRES_USER: dev_notification_test_user
           POSTGRES_PASSWORD: turnip
-          POSTGRES_DB: dev_quest_test_db
+          POSTGRES_DB: dev_notification_test_db
         ports:
-          - 5431:5432
+          - 5436:5432
         options: >-
-          --health-cmd "pg_isready -U dev_quest_test_user -d dev_quest_test_db"
+          --health-cmd "pg_isready -U dev_notification_test_user -d dev_notification_test_db"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -152,7 +152,7 @@ jobs:
           PGPASSWORD: turnip
         run: |
           for i in {1..30}; do
-            if pg_isready -h localhost -p 5431 -U dev_quest_test_user; then
+            if pg_isready -h localhost -p 5431 -U dev_notification_test_user; then
               echo "Postgres is ready";
               break;
             fi
@@ -164,21 +164,8 @@ jobs:
         env:
           PGPASSWORD: turnip
         run: |
-          psql -h localhost -p 5431 -U dev_quest_test_user -d postgres -c "DROP DATABASE IF EXISTS dev_quest_test_db;"
-          psql -h localhost -p 5431 -U dev_quest_test_user -d postgres -c "CREATE DATABASE dev_quest_test_db;"
-
-      # - name: Install AWS CLI v2 (no sudo)
-      #   run: |
-      #     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
-      #     unzip /tmp/awscliv2.zip -d /tmp
-      #     sudo /tmp/aws/install -i /usr/local/aws-cli -b /usr/local/bin
-      #   shell: bash
-
-      # - name: Create S3 bucket “test-bucket”
-      #   run: |
-      #     aws --endpoint-url=${AWS_ENDPOINT_URL} \
-      #         s3api create-bucket \
-      #         --bucket test-bucket
+          psql -h localhost -p 5431 -U dev_notification_test_user -d postgres -c "DROP DATABASE IF EXISTS dev_notification_test_db;"
+          psql -h localhost -p 5431 -U dev_notification_test_user -d postgres -c "CREATE DATABASE dev_notification_test_db;"
 
       - name: Run Integration Tests
         run: sbt it/test
