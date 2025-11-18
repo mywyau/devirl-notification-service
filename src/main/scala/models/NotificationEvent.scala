@@ -8,6 +8,7 @@ import io.circe.Encoder
 sealed trait NotificationEvent
 
 object NotificationEvent {
+  
   final case class QuestCompleted(userId: String, questTitle: String, reward: Int) extends NotificationEvent
   final case class QuestPaid(userId: String, amount: Int) extends NotificationEvent
   final case class QuestUpdated(userId: String, questTitle: String) extends NotificationEvent

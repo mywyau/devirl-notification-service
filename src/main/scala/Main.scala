@@ -17,7 +17,6 @@ import fs2.concurrent.Topic
 import fs2.kafka.AutoOffsetReset
 import fs2.kafka.ConsumerSettings
 import fs2.Stream
-import infrastructure.KafkaProducerProvider
 import java.time.Instant
 import java.util.UUID
 import middleware.Middleware.throttleMiddleware
@@ -56,7 +55,6 @@ object Main extends IOApp {
         config: AppConfig <- Resource.eval(ConfigReader[IO].loadAppConfig)
         transactor: HikariTransactor[IO] <- DatabaseModule.make[IO](config)
         redis: RedisCommands[IO, String, String] <- RedisModule.make[IO](config)
-        // kafkaProducers: KafkaProducers[IO] <- KafkaModule.make[IO](config)
         httpClient: Client[IO] <- HttpClientModule.make[IO]
         httpApp: Kleisli[IO, Request[IO], Response[IO]] <- HttpModule.make(config, transactor)
         host: Host <- Resource.eval(IO.fromOption(Host.fromString(config.serverConfig.host))(new RuntimeException("Invalid host in configuration")))

@@ -1,46 +1,45 @@
-package services
+// package services
 
-import java.time.Instant
-import java.util.UUID
-import models.Notification
-import models.NotificationEvent.*
-import models.NotificationEvent
+// import java.time.Instant
+// import java.util.UUID
+// import models.IncomingKafkaEvent
+// import models.Notification
+// import models.NotificationEvent
+// import models.NotificationEvent.*
 
-object NotificationMapper {
+// object NotificationMapper {
 
-  def fromEvent(event: NotificationEvent): Notification =
-    event match {
-      case QuestCompleted(userId, questTitle, reward) =>
-        Notification(
-          notificationId = UUID.randomUUID().toString,
-          userId = userId,
-          title = "Quest Completed!",
-          message = s"You finished '$questTitle' and earned $$${reward}.",
-          eventType = "quest.completed",
-          createdAt = Instant.now(),
-          read = false
-        )
-
-      case QuestPaid(userId, amount) =>
-        Notification(
-          notificationId = UUID.randomUUID().toString,
-          userId = userId,
-          title = "Payment Received",
-          message = s"You were paid $$${amount}.",
-          eventType = "quest.paid",
-          createdAt = Instant.now(),
-          read = false
-        )
-
-      case QuestUpdated(userId, questTitle) =>
-        Notification(
-          notificationId = UUID.randomUUID().toString,
-          userId = userId,
-          title = "Quest Updated",
-          message = s"The quest '$questTitle' was updated.",
-          eventType = "quest.updated",
-          createdAt = Instant.now(),
-          read = false
-        )
-    }
-}
+//   def fromEvent(event: IncomingKafkaEvent): Notification =
+//     event match {
+//       case IncomingKafkaEvent.QuestCreated(event) =>
+//         Notification(
+//           notificationId = UUID.randomUUID().toString,
+//           userId = event.clientId,
+//           title = event.title,
+//           message = "Quest created with title Mikey",
+//           eventType = "quest.completed",
+//           createdAt = Instant.now(),
+//           read = false
+//         )
+//       case IncomingKafkaEvent.QuestCompleted(event) =>
+//         Notification(
+//           notificationId = UUID.randomUUID().toString,
+//           userId = event.clientId,
+//           title = event.title,
+//           message = s"You finished ${event.title}",
+//           eventType = "quest.completed",
+//           createdAt = Instant.now(),
+//           read = false
+//         )
+//       case IncomingKafkaEvent.QuestUpdated(event) =>
+//         Notification(
+//           notificationId = UUID.randomUUID().toString,
+//           userId = event.clientId,
+//           title = event.title,
+//           message = s"The quest '$questTitle' was updated.",
+//           eventType = "quest.updated",
+//           createdAt = Instant.now(),
+//           read = false
+//         )
+//     }
+// }
