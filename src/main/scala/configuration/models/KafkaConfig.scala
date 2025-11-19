@@ -1,6 +1,7 @@
 package configuration.models
 
 final case class KafkaTopicConfig(
+  questEvents: String,
   userRegistered: String,
 )
 

@@ -2,28 +2,31 @@ package kafka
 
 import cats.effect.*
 import cats.syntax.all.*
-import consumers.NotificationConsumer
+import consumers.QuestNotificationConsumer
 import doobie.implicits.*
 import doobie.util.transactor
 import fs2.concurrent.Topic
 import fs2.kafka.*
 import io.circe.syntax.*
-import java.time.Instant
 import kafka.fragments.NotificationFragments.*
 import models.*
-import org.typelevel.log4cats.slf4j.Slf4jLogger
+import models.NotificationEvent.QuestCompleted
+import models.events.QuestCompletedEvent
 import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import repositories.NotificationRepositoryAlgebra
 import repositories.NotificationRepositoryImpl
-import scala.collection.mutable
-import scala.concurrent.duration.*
 import shared.KafkaProducerResource
 import shared.TransactorResource
-import sys.process.*
 import weaver.*
-import models.NotificationEvent.QuestCompleted
 
-class NotificationKafkaEndToEndISpec(global: GlobalRead) extends IOSuite {
+import java.time.Instant
+import scala.collection.mutable
+import scala.concurrent.duration.*
+
+import sys.process.*
+
+class QuestNotificationConsumerISpec(global: GlobalRead) extends IOSuite {
   type Res = (KafkaProducerResource, TransactorResource)
 
   implicit val logger: Logger[IO] = Slf4jLogger.getLogger[IO]
@@ -50,19 +53,23 @@ class NotificationKafkaEndToEndISpec(global: GlobalRead) extends IOSuite {
       s"docker exec kafka-container-redpanda-1 rpk topic delete $topic --brokers localhost:9092".!
     }.void
 
-  test("NotificationConsumer should consume NotificationEvent and insert Notification") { (sharedResource, log) =>
+  test("QuestNotificationConsumer -  should consume NotificationEvent and insert Notification") { (sharedResource, log) =>
 
     val kafkaProducer = sharedResource._1
     val transactor = sharedResource._2
 
-    val topicName = s"notifications"
+    val topicName = s"quest.events.test.v1"
 
-    // Create a NotificationEvent (e.g. quest completed)
+    // Create a NotificationEvent (e.g. QuestCompletedEvent)
     val event =
-      QuestCompleted(
-        userId = "test-user",
-        questTitle = "Implement NotificationConsumer",
-        reward = 250
+      Envelope(
+        typeName = "quest.completed",
+        payload = QuestCompletedEvent(
+          clientId = "test-user",
+          questId = "quest001",
+          title = "Quest Completed!",
+          createdAt = Instant.now()
+        ).asJson
       )
 
     val jsonEvent = event.asJson.noSpaces
@@ -78,18 +85,13 @@ class NotificationKafkaEndToEndISpec(global: GlobalRead) extends IOSuite {
         .withGroupId(s"notification-consumer-test")
         .withAutoOffsetReset(AutoOffsetReset.Earliest)
 
-      // Real consumer using your NotificationConsumer class
-      consumer = new NotificationConsumer[IO](topic, repo, consumerSettings)
-
-      // Start consuming in the background
+      consumer = new QuestNotificationConsumer[IO](topicName, topic, repo, consumerSettings)
       fiber <- consumer.stream.compile.drain.start
-
       _ <- IO.sleep(500.millis) // wait for consumer to subscribe
-
       // Produce a NotificationEvent to Kafka
       _ <- KafkaProducer
         .stream(ProducerSettings[IO, String, String].withBootstrapServers("localhost:9092"))
-        .evalMap(_.produceOne_("notifications", "key", jsonEvent))
+        .evalMap(_.produceOne_(topicName, "key", jsonEvent))
         .compile
         .drain
 
@@ -100,7 +102,9 @@ class NotificationKafkaEndToEndISpec(global: GlobalRead) extends IOSuite {
       retrievedNotification <- repo.getByUserId("test-user")
       _ <- deleteTopic(topicName)
 
-    } yield expect(retrievedNotification.nonEmpty && retrievedNotification.head.title == "Quest Completed!")
-
+    } yield expect.all(
+      retrievedNotification.nonEmpty,
+      retrievedNotification.head.title == "Quest Completed!"
+    )
   }
 }

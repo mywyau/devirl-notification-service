@@ -21,5 +21,4 @@ object Notification {
 
   implicit val encoder: Encoder[Notification] = deriveEncoder[Notification]
   implicit val decoder: Decoder[Notification] = deriveDecoder[Notification]
-
 }

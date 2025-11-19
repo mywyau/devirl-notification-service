@@ -13,7 +13,6 @@ import dev.profunktor.redis4cats.RedisCommands
 import doobie.util.transactor.Transactor
 import fs2.kafka.*
 import infrastructure.*
-import infrastructure.KafkaProducerProvider
 import java.net.URI
 import java.time.Duration
 import java.time.Instant
@@ -39,7 +38,6 @@ object TestRoutes extends BaseAppConfig {
   def createTestRouter(appConfig: AppConfig, transactor: Transactor[IO]): Resource[IO, HttpRoutes[IO]] =
     for {
       _ <- Resource.pure(1)
-      // registrationRoutes <- registrationRoutes(appConfig, transactor)
     } yield Router(
       "/devirl-notification-service" -> (
         baseRoutes()
