@@ -20,13 +20,13 @@ import models.Notification
 import models.NotificationEvent
 import models.NotificationEvent.*
 import org.typelevel.log4cats.Logger
-import repositories.NotificationRepositoryAlgebra
+import repositories.*
 import scala.concurrent.duration.*
 
 final class QuestNotificationConsumer[F[_] : Async : Temporal : Logger](
   topicNameSubscribedTo: String,
   topic: Topic[F, Notification],
-  repo: NotificationRepositoryAlgebra[F],
+  repo: NotificationsRepositoryAlgebra[F],
   kafkaConfig: ConsumerSettings[F, String, String]
 ) {
 

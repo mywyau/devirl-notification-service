@@ -14,8 +14,8 @@ import models.NotificationEvent.QuestCompleted
 import models.events.QuestCompletedEvent
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
-import repositories.NotificationRepositoryAlgebra
-import repositories.NotificationRepositoryImpl
+import repositories.NotificationsRepositoryAlgebra
+import repositories.NotificationsRepositoryImpl
 import shared.KafkaProducerResource
 import shared.TransactorResource
 import weaver.*
@@ -74,7 +74,7 @@ class QuestNotificationConsumerISpec(global: GlobalRead) extends IOSuite {
 
     val jsonEvent = event.asJson.noSpaces
 
-    val repo = new NotificationRepositoryImpl(transactor.xa)
+    val repo = new NotificationsRepositoryImpl(transactor.xa)
 
     for {
       _ <- resetKafkaTopic(topicName)

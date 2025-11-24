@@ -9,14 +9,13 @@ import doobie.implicits.javatime.*
 import doobie.postgres.circe.jsonb.implicits.*
 import doobie.util.meta.Meta
 import doobie.util.transactor.Transactor
-import models.Notification
-
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.UUID
+import models.Notification
 
-trait NotificationRepositoryAlgebra[F[_]] {
+trait NotificationsRepositoryAlgebra[F[_]] {
 
   def getByUserId(userId: String): F[List[Notification]]
 
@@ -25,11 +24,11 @@ trait NotificationRepositoryAlgebra[F[_]] {
   def getOwnerOf(notificationId: String): F[Option[String]]
 
   def markAsRead(notificationId: String): F[Int]
-  
+
   def insert(n: Notification): F[Int]
 }
 
-class NotificationRepositoryImpl[F[_] : MonadCancelThrow](xa: Transactor[F]) extends NotificationRepositoryAlgebra[F] {
+class NotificationsRepositoryImpl[F[_] : MonadCancelThrow](xa: Transactor[F]) extends NotificationsRepositoryAlgebra[F] {
 
   // Map Java Instant to SQL TIMESTAMP
   implicit val instantMeta: Meta[Instant] =
@@ -87,7 +86,7 @@ class NotificationRepositoryImpl[F[_] : MonadCancelThrow](xa: Transactor[F]) ext
       .transact(xa)
 }
 
-object NotificationRepository {
-  def apply[F[_] : MonadCancelThrow](xa: Transactor[F]): NotificationRepositoryAlgebra[F] =
-    new NotificationRepositoryImpl[F](xa)
+object NotificationsRepository {
+  def apply[F[_] : MonadCancelThrow](xa: Transactor[F]): NotificationsRepositoryAlgebra[F] =
+    new NotificationsRepositoryImpl[F](xa)
 }

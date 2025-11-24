@@ -30,7 +30,7 @@ object Routes {
   ): HttpRoutes[F] = {
 
     val sessionCache = SessionCache(appConfig)
-    val notificationRepository = NotificationRepository(transactor)
+    val notificationRepository = NotificationsRepository(transactor)
     val notificationService = NotificationService(notificationRepository)
     val notificationController = NotificationController(sessionCache, notificationService)
 

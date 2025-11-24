@@ -13,8 +13,8 @@ case class Notification(
   title: String,
   message: String,
   eventType: String,
+  read: Boolean,
   createdAt: Instant,
-  read: Boolean
 )
 
 object Notification {

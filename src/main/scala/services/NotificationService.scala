@@ -26,7 +26,7 @@ import models.database.DatabaseErrors
 import models.database.DatabaseSuccess
 import models.users.*
 import org.typelevel.log4cats.Logger
-import repositories.NotificationRepositoryAlgebra
+import repositories.NotificationsRepositoryAlgebra
 
 import java.time.Instant
 import java.util.UUID
@@ -44,7 +44,7 @@ trait NotificationServiceAlgebra[F[_]] {
 }
 
 class NotificationServiceImpl[F[_] : Concurrent : Monad : Logger](
-  repo: NotificationRepositoryAlgebra[F]
+  repo: NotificationsRepositoryAlgebra[F]
 ) extends NotificationServiceAlgebra[F] {
 
   private def sanitize(s: String): String =
@@ -89,6 +89,6 @@ class NotificationServiceImpl[F[_] : Concurrent : Monad : Logger](
 }
 
 object NotificationService {
-  def apply[F[_] : Concurrent : Logger](repo: NotificationRepositoryAlgebra[F]): NotificationServiceAlgebra[F] =
+  def apply[F[_] : Concurrent : Logger](repo: NotificationsRepositoryAlgebra[F]): NotificationServiceAlgebra[F] =
     new NotificationServiceImpl[F](repo)
 }

@@ -61,7 +61,7 @@ object Main extends IOApp {
         host: Host <- Resource.eval(IO.fromOption(Host.fromString(config.serverConfig.host))(new RuntimeException("Invalid host in configuration")))
         port: Port <- Resource.eval(IO.fromOption(Port.fromInt(config.serverConfig.port))(new RuntimeException("Invalid port in configuration")))
 
-        notificationRepo = NotificationRepository[IO](transactor)
+        notificationRepo = NotificationsRepository[IO](transactor)
 
         //  Set up Kafka consumer configuration
         kafkaConsumerSettings =
