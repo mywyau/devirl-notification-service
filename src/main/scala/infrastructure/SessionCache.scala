@@ -65,20 +65,20 @@ class SessionCacheImpl[F[_] : Async : Logger](appConfig: AppConfig) extends Sess
     val key = s"auth:session:$userId"
 
     for {
-      _ <- Logger[F].debug(s"[SessionCache] Retrieving session for userId=$userId")
+      _ <- Logger[F].info(s"[SessionCache] Retrieving session for userId=$userId")
       maybeJ <- withRedis(_.get(key))
       result <- maybeJ match {
         case None =>
           Logger[F]
-            .debug(s"[SessionCache][getSession] No session found for userId=$userId")
+            .info(s"[SessionCache][getSession] No session found for userId=$userId")
             .as(None)
         case Some(jsonStr) =>
-          Logger[F].debug(s"[SessionCache][getSession] Session JSON for userId=$userId: $jsonStr") *>
+          Logger[F].info(s"[SessionCache][getSession] Session JSON for userId=$userId: $jsonStr") *>
             (
               decode[UserSession](jsonStr) match {
                 case Right(session) =>
                   Logger[F]
-                    .debug(s"[SessionCache][getSession] Parsed session for userId=$userId")
+                    .info(s"[SessionCache][getSession] Parsed session for userId=$userId")
                     .as(Some(session))
                 case Left(err) =>
                   Logger[F]

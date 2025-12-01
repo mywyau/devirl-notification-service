@@ -31,6 +31,8 @@ import repositories.UserDataRepositoryAlgebra
 
 trait RegistrationServiceAlgebra[F[_]] {
 
+  def getUser(userId: String): F[Option[UserData]]
+
   def registerUser(userId: String, registrationData: RegistrationData): F[ValidatedNel[DatabaseErrors, DatabaseSuccess]]
 
   def deleteUser(userId: String): F[ValidatedNel[DatabaseErrors, DatabaseSuccess]]
@@ -40,6 +42,10 @@ class RegistrationServiceImpl[F[_] : Concurrent : Monad : Logger](
   userRepo: UserDataRepositoryAlgebra[F],
   outboxRepo: OutboxRepositoryAlgebra[F]
 ) extends RegistrationServiceAlgebra[F] {
+
+
+  override def getUser(userId: String): F[Option[UserData]] = 
+    userRepo.findUser(userId)
 
   override def registerUser(userId: String, registrationData: RegistrationData): F[ValidatedNel[DatabaseErrors, DatabaseSuccess]] = {
 

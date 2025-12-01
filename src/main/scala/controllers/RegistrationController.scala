@@ -42,55 +42,69 @@ class RegistrationControllerImpl[F[_] : Async : Concurrent : Logger](
       .map(_.content)
 
   private def withValidSession(userId: String, token: String)(onValid: F[Response[F]]): F[Response[F]] =
-    Logger[F].debug(s"[RegistrationControllerImpl][withValidSession] UserId: $userId, token: $token") *>
+    Logger[F].info(s"[RegistrationControllerImpl][withValidSession] UserId: $userId, token: $token") *>
       sessionCache.getSession(userId).flatMap {
         case Some(userSession) if userSession.cookieValue == token =>
-          Logger[F].debug(s"[RegistrationControllerImpl][withValidSession] User session: $userSession") *>
+          Logger[F].info(s"[RegistrationControllerImpl][withValidSession] User session: $userSession") *>
             onValid
         case Some(session) =>
-          Logger[F].debug(s"[RegistrationControllerImpl][withValidSession] User session does not match request user session token value from redis. $session") *>
+          Logger[F].info(s"[RegistrationControllerImpl][withValidSession] User session does not match request user session token value from redis. $session") *>
             Forbidden("User session does not match request user session token value from redis.")
         case None =>
-          Logger[F].debug("[RegistrationControllerImpl][withValidSession] Invalid or expired session")
+          Logger[F].info("[RegistrationControllerImpl][withValidSession] Invalid or expired session")
+          Forbidden("Invalid or expired session")
+      }
+
+  private def withValidSessionCookieOnly(userId: String, token: String)(onValid: F[Response[F]]): F[Response[F]] =
+    Logger[F].info(s"[RegistrationControllerImpl][withValidSession] UserId: $userId, token: $token") *>
+      sessionCache.getSessionCookieOnly(userId).flatMap {
+        case Some(cookieTokenValue) if cookieTokenValue == token =>
+          Logger[F].info(s"[RegistrationControllerImpl][withValidSessionCookieOnly] CookieTokenValue: $cookieTokenValue") *>
+            onValid
+        case Some(session) =>
+          Logger[F].info(s"[RegistrationControllerImpl][withValidSessionCookieOnly] User session does not match request user session token value from redis. $session") *>
+            Forbidden("User session does not match request user session token value from redis.")
+        case None =>
+          Logger[F].info("[RegistrationControllerImpl][withValidSessionCookieOnly] Invalid or expired session")
           Forbidden("Invalid or expired session")
       }
 
   val routes: HttpRoutes[F] = HttpRoutes.of[F] {
 
     case req @ GET -> Root / "registration" / "health" =>
-      Logger[F].debug(s"[BaseControllerImpl] GET - Health check for backend RegistrationController service") *>
+      Logger[F].info(s"[BaseControllerImpl] GET - Health check for backend RegistrationController service") *>
         Ok(GetResponse("/devirl-auth-service/registration/health", "I am alive - RegistrationControllerImpl").asJson)
 
-    // case req @ GET -> Root / "registration" / "account" / "data" / userId =>
-    //   (
-    //     Logger[F].debug(s"[RegistrationController][/user/data/$userId] GET - Attempting to retrieve user details") *>
-    //       Async[F].pure(extractCookieSessionToken(req))
-    //   ).flatMap {
-    //     case Some(cookieToken) =>
-    //       withValidSession(userId, cookieToken) {
-    //         Logger[F].debug(s"[RegistrationController] GET - Authenticated for userId $userId") *>
-    //           registrationService.getUser(userId).flatMap {
-    //             case Some(user) =>
-    //               Logger[F].debug(s"[RegistrationController] GET - Found user ${userId.toString()}") *>
-    //                 Ok(user.asJson)
-    //             case None =>
-    //               BadRequest(ErrorResponse("No_User_Data", "No user found").asJson)
-    //           }
-    //       }
-    //     case None =>
-    //       Logger[F].debug(s"[RegistrationController] GET - Unauthorised") *>
-    //         Unauthorized(`WWW-Authenticate`(Challenge("Bearer", "api")), "Missing Cookie")
-    //   }
+    case req @ GET -> Root / "registration" / "account" / "data" / userId =>
+      (
+        Logger[F].info(s"[RegistrationController][/user/data/$userId] GET - Attempting to retrieve user details") *>
+          Async[F].pure(extractCookieSessionToken(req))
+      ).flatMap {
+        case Some(cookieToken) =>
+          withValidSessionCookieOnly(userId, cookieToken) {
+            Logger[F].info(s"[RegistrationController] GET - Authenticated for userId $userId") *>
+              registrationService.getUser(userId).flatMap {
+                case Some(user) =>
+                  Logger[F].info(s"[RegistrationController] GET - Found user ${userId.toString()}") *>
+                    Ok(user.asJson)
+                case None =>
+                  BadRequest(ErrorResponse("No_User_Data", "No user found").asJson)
+              }
+          }
+        case None =>
+          Logger[F].info(s"[RegistrationController] GET - Unauthorised") *>
+            Unauthorized(`WWW-Authenticate`(Challenge("Bearer", "api")), "Missing Cookie")
+      }
 
     case req @ POST -> Root / "registration" / "account" / "data" / "create" / userId =>
       extractCookieSessionToken(req) match {
-        case Some(headerToken) =>
-          withValidSession(userId, headerToken) {
-            Logger[F].debug(s"[RegistrationControllerImpl] POST - Registering user") *>
+        case Some(cookieToken) =>
+          withValidSessionCookieOnly(userId, cookieToken) {
+            Logger[F].info(s"[RegistrationControllerImpl] POST - Registering user") *>
               req.decode[RegistrationData] { request =>
                 registrationService.registerUser(userId, request).flatMap {
                   case Valid(response) =>
-                    Logger[F].debug(s"[RegistrationControllerImpl] POST - Successfully registered a user") *>
+                    Logger[F].info(s"[RegistrationControllerImpl] POST - Successfully registered a user") *>
                       Created(CreatedResponse(response.toString, "user details successfully registered").asJson)
                   case Invalid(_) =>
                     InternalServerError(ErrorResponse(code = "Code", message = "An error occurred").asJson)
@@ -105,14 +119,14 @@ class RegistrationControllerImpl[F[_] : Async : Concurrent : Logger](
     //   extractCookieSessionToken(req) match {
     //     case Some(headerToken) =>
     //       withValidSession(userId, headerToken) {
-    //         Logger[F].debug(s"[UserDataControllerImpl] PUT - Updating user with ID: $userId") *>
+    //         Logger[F].info(s"[UserDataControllerImpl] PUT - Updating user with ID: $userId") *>
     //           req.decode[RegistrationData] { request =>
     //             registrationService.registerUser(userId, request).flatMap {
     //               case Valid(response) =>
-    //                 Logger[F].debug(s"[UserDataControllerImpl] PUT - Successfully updated user for ID: $userId") *>
+    //                 Logger[F].info(s"[UserDataControllerImpl] PUT - Successfully updated user for ID: $userId") *>
     //                   Ok(UpdatedResponse(UpdateSuccess.toString, s"User $userId updated successfully").asJson)
     //               case Invalid(errors) =>
-    //                 Logger[F].debug(s"[UserDataControllerImpl] PUT - Validation failed for user update: ${errors.toList}") *>
+    //                 Logger[F].info(s"[UserDataControllerImpl] PUT - Validation failed for user update: ${errors.toList}") *>
     //                   BadRequest(ErrorResponse(code = "VALIDATION_ERROR", message = errors.toList.mkString(", ")).asJson)
     //             }
     //           }
@@ -125,10 +139,10 @@ class RegistrationControllerImpl[F[_] : Async : Concurrent : Logger](
     //   extractCookieSessionToken(req) match {
     //     case Some(headerToken) =>
     //       withValidSession(userId, headerToken) {
-    //         Logger[F].debug(s"[RegistrationControllerImpl] DELETE - Attempting to delete user") *>
+    //         Logger[F].info(s"[RegistrationControllerImpl] DELETE - Attempting to delete user") *>
     //           registrationService.deleteUser(userId).flatMap {
     //             case Valid(response) =>
-    //               Logger[F].debug(s"[RegistrationControllerImpl] DELETE - Successfully deleted user for $userId") *>
+    //               Logger[F].info(s"[RegistrationControllerImpl] DELETE - Successfully deleted user for $userId") *>
     //                 Ok(DeletedResponse(response.toString, "User deleted successfully").asJson)
     //             case Invalid(error) =>
     //               val errorResponse = ErrorResponse("placeholder error", "some deleted user message")

@@ -31,45 +31,45 @@ class AuthControllerImpl[F[_] : Async : Logger](
   val routes: HttpRoutes[F] = HttpRoutes.of[F] {
 
     case req @ GET -> Root / "auth" / "health" =>
-      Logger[F].debug(s"[AuthControllerImpl] GET - Health check for backend auth controller: ${GetResponse("success", "I am alive").asJson}") *>
+      Logger[F].info(s"[AuthControllerImpl] GET - Health check for backend auth controller: ${GetResponse("success", "I am alive").asJson}") *>
         Ok(GetResponse("auth_health_success", "I am alive").asJson)
 
     case GET -> Root / "auth" / "session" / userId =>
-      Logger[F].debug(s"[AuthControllerImpl] GET - Validating session for userId: $userId") *>
+      Logger[F].info(s"[AuthControllerImpl] GET - Validating session for userId: $userId") *>
         sessionService.getSession(userId).flatMap {
           case Some(token) =>
-            Logger[F].debug(s"[AuthControllerImpl] Session found for $userId: $token") *>
+            Logger[F].info(s"[AuthControllerImpl] Session found for $userId: $token") *>
               Ok(GetResponse("200", s"Session token: $token").asJson)
           case None =>
-            Logger[F].debug(s"[AuthControllerImpl] No session found for $userId") *>
+            Logger[F].info(s"[AuthControllerImpl] No session found for $userId") *>
               NotFound(ErrorResponse("NOT_FOUND", s"No session for userId $userId").asJson)
         }
 
     case req @ POST -> Root / "auth" / "session" / userId =>
-      Logger[F].debug(s"Incoming cookies: ${req.cookies.map(c => s"${c.name}=${c.content}").mkString(", ")}") *>
-        Logger[F].debug(s"POST - Creating session for userId: $userId") *>
+      Logger[F].info(s"Incoming cookies: ${req.cookies.map(c => s"${c.name}=${c.content}").mkString(", ")}") *>
+        Logger[F].info(s"POST - Creating session for userId: $userId") *>
         Async[F].delay(req.cookies.find(_.name == "auth_session")).flatMap {
           case Some(cookie) =>
             sessionService.storeOnlyCookie(userId, cookie.content) *>
               Created(CreatedResponse(userId, "Session stored from cookie in session cache").asJson)
                 .map(_.withContentType(`Content-Type`(MediaType.application.json)))
           case None =>
-            Logger[F].debug(s"No auth_session cookie for $userId") *>
+            Logger[F].info(s"No auth_session cookie for $userId") *>
               BadRequest(ErrorResponse("NO_COOKIE", "auth_session cookie not found").asJson)
                 .map(_.withContentType(`Content-Type`(MediaType.application.json)))
         }
 
     case req @ POST -> Root / "auth" / "session" / "sync" / userId =>
-      Logger[F].debug(s"Incoming cookies: ${req.cookies.map(c => s"${c.name}=${c.content}").mkString(", ")}") *>
-        Logger[F].debug(s"POST - Updating session for userId: $userId") *>
+      Logger[F].info(s"Incoming cookies: ${req.cookies.map(c => s"${c.name}=${c.content}").mkString(", ")}") *>
+        Logger[F].info(s"POST - Updating session for userId: $userId") *>
         Async[F].delay(req.cookies.find(_.name == "auth_session")).flatMap {
           case Some(cookie) =>
-            Logger[F].debug(s"[AuthController][/auth/session/sync] Cache updated with cookie content: ${cookie.content}") *>
+            Logger[F].info(s"[AuthController][/auth/session/sync] Cache updated with cookie content: ${cookie.content}") *>
               sessionService
                 .syncUserSessionFromDb(userId = userId, cookieToken = cookie.content)
                 .flatMap {
                   case Valid(_) =>
-                    Logger[F].debug(s"[AuthController] Cache updated for $userId") *>
+                    Logger[F].info(s"[AuthController] Cache updated for $userId") *>
                       Created(CreatedResponse(userId, "Session synced from DB").asJson)
                         .map(_.withContentType(`Content-Type`(MediaType.application.json)))
                   case Invalid(errors) =>
@@ -85,7 +85,7 @@ class AuthControllerImpl[F[_] : Async : Logger](
         }
 
     case DELETE -> Root / "auth" / "session" / "delete" / userId =>
-      Logger[F].debug(s"[AuthControllerImpl] DELETE - Deleting session for $userId") *>
+      Logger[F].info(s"[AuthControllerImpl] DELETE - Deleting session for $userId") *>
         sessionService.deleteSession(userId) *>
         Ok(DeletedResponse(userId, "Session deleted").asJson)
   }

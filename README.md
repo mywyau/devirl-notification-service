@@ -130,7 +130,7 @@ docker-compose down --volumes --remove-orphans
 ### To connect to postgresql database
 
 ```
-psql -h localhost -p 5432 -U dev_quest_user -d dev_quest_db
+psql -h localhost -p 5433 -U dev_auth_user -d dev_auth_db
 ```
 
 #### App Database Password:
