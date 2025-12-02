@@ -61,6 +61,39 @@ class RegistrationControllerISpec(global: GlobalRead) extends IOSuite with Contr
   }
 
   test(
+    "GET - /devirl-auth-service/registration/account/data/USER001 -  health check should return the health response"
+  ) { (transactorResource, log) =>
+
+    val transactor = transactorResource._1.xa
+    val client = transactorResource._2.client
+
+    val sessionToken = "test-session-token"
+
+    val expected =
+      UserData(
+        userId = "USER001",
+        username = "goku",
+        email = "bob_smith@gmail.com",
+        firstName = Some("Bob"),
+        lastName = Some("Smith"),
+        userType = Some(Dev)
+      )
+
+    val request =
+      Request[IO](GET, uri"http://127.0.0.1:9999/devirl-auth-service/registration/account/data/USER001")
+        .addCookie("auth_session", sessionToken)
+
+    client.run(request).use { response =>
+      response.as[UserData].map { body =>
+        expect.all(
+          response.status == Status.Ok,
+          body == expected
+        )
+      }
+    }
+  }
+
+  test(
     "POST - /devirl-auth-service/registration/account/data/create/USER007 - should generate the user data in db table, returning Created response"
   ) { (transactorResource, log) =>
 
