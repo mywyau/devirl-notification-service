@@ -112,46 +112,9 @@ class RegistrationControllerImpl[F[_] : Async : Concurrent : Logger](
               }
           }
         case None =>
-          Unauthorized(`WWW-Authenticate`(Challenge("Bearer", "api")), "Missing Cookie")
+          Logger[F].info(s"[RegistrationControllerImpl] POST - Successfully registered a user") *>
+            Unauthorized(`WWW-Authenticate`(Challenge("Bearer", "api")), "Missing Cookie")
       }
-
-    // case req @ PUT -> Root / "registration" / "account" / "data" / "update" / userId =>
-    //   extractCookieSessionToken(req) match {
-    //     case Some(headerToken) =>
-    //       withValidSession(userId, headerToken) {
-    //         Logger[F].info(s"[UserDataControllerImpl] PUT - Updating user with ID: $userId") *>
-    //           req.decode[RegistrationData] { request =>
-    //             registrationService.registerUser(userId, request).flatMap {
-    //               case Valid(response) =>
-    //                 Logger[F].info(s"[UserDataControllerImpl] PUT - Successfully updated user for ID: $userId") *>
-    //                   Ok(UpdatedResponse(UpdateSuccess.toString, s"User $userId updated successfully").asJson)
-    //               case Invalid(errors) =>
-    //                 Logger[F].info(s"[UserDataControllerImpl] PUT - Validation failed for user update: ${errors.toList}") *>
-    //                   BadRequest(ErrorResponse(code = "VALIDATION_ERROR", message = errors.toList.mkString(", ")).asJson)
-    //             }
-    //           }
-    //       }
-    //     case None =>
-    //       Unauthorized(`WWW-Authenticate`(Challenge("Bearer", "api")), "Missing Cookie")
-    //   }
-
-    // case req @ DELETE -> Root / "registration" / "account" / "data" / "delete" / userId =>
-    //   extractCookieSessionToken(req) match {
-    //     case Some(headerToken) =>
-    //       withValidSession(userId, headerToken) {
-    //         Logger[F].info(s"[RegistrationControllerImpl] DELETE - Attempting to delete user") *>
-    //           registrationService.deleteUser(userId).flatMap {
-    //             case Valid(response) =>
-    //               Logger[F].info(s"[RegistrationControllerImpl] DELETE - Successfully deleted user for $userId") *>
-    //                 Ok(DeletedResponse(response.toString, "User deleted successfully").asJson)
-    //             case Invalid(error) =>
-    //               val errorResponse = ErrorResponse("placeholder error", "some deleted user message")
-    //               BadRequest(errorResponse.asJson)
-    //           }
-    //       }
-    //     case None =>
-    //       Unauthorized(`WWW-Authenticate`(Challenge("Bearer", "api")), "Missing cookie token")
-    //   }
   }
 }
 

@@ -46,22 +46,22 @@ class AuthControllerImpl[F[_] : Async : Logger](
         }
 
     case req @ POST -> Root / "auth" / "session" / userId =>
-      Logger[F].info(s"Incoming cookies: ${req.cookies.map(c => s"${c.name}=${c.content}").mkString(", ")}") *>
-        Logger[F].info(s"POST - Creating session for userId: $userId") *>
+      Logger[F].info(s"[AuthControllerImpl] - Incoming cookies: ${req.cookies.map(c => s"${c.name}=${c.content}").mkString(", ")}") *>
+        Logger[F].info(s"[AuthControllerImpl] - POST - Creating session for userId: $userId") *>
         Async[F].delay(req.cookies.find(_.name == "auth_session")).flatMap {
           case Some(cookie) =>
             sessionService.storeOnlyCookie(userId, cookie.content) *>
               Created(CreatedResponse(userId, "Session stored from cookie in session cache").asJson)
                 .map(_.withContentType(`Content-Type`(MediaType.application.json)))
           case None =>
-            Logger[F].info(s"No auth_session cookie for $userId") *>
+            Logger[F].info(s"[AuthControllerImpl] - No auth_session cookie for $userId") *>
               BadRequest(ErrorResponse("NO_COOKIE", "auth_session cookie not found").asJson)
                 .map(_.withContentType(`Content-Type`(MediaType.application.json)))
         }
 
     case req @ POST -> Root / "auth" / "session" / "sync" / userId =>
-      Logger[F].info(s"Incoming cookies: ${req.cookies.map(c => s"${c.name}=${c.content}").mkString(", ")}") *>
-        Logger[F].info(s"POST - Updating session for userId: $userId") *>
+      Logger[F].info(s"[AuthControllerImpl] - Incoming cookies: ${req.cookies.map(c => s"${c.name}=${c.content}").mkString(", ")}") *>
+        Logger[F].info(s"[AuthControllerImpl] - POST - Updating session for userId: $userId") *>
         Async[F].delay(req.cookies.find(_.name == "auth_session")).flatMap {
           case Some(cookie) =>
             Logger[F].info(s"[AuthController][/auth/session/sync] Cache updated with cookie content: ${cookie.content}") *>
