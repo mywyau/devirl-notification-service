@@ -8,8 +8,8 @@ object LocalAppConfigConstants {
   val featureSwitches =
     FeatureSwitches(
       useDockerHost = false,
-      localTesting = false,
-      useCors = false
+      localTesting = true,
+      useCors = true
     )
 
   val devIrlFrontendConfig =
@@ -22,7 +22,7 @@ object LocalAppConfigConstants {
   val appServerConfig =
     ServerConfig(
       host = "0.0.0.0",
-      port = 8080
+      port = 8090
     )
 
   val containerPostgreSqlConfig =
